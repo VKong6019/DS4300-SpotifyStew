@@ -5,6 +5,7 @@ import querystring from 'query-string';
 import base64url from 'base64url';
 import randomstring from 'randomstring';
 import axios from 'axios';
+import e from 'express';
 
 dotenv.config();
 const app = express();
@@ -26,8 +27,7 @@ const base64Digest = crypto
 
 const code_challenge = base64url.fromBase64(base64Digest);
 
-app.get('/', (req, res) => {
-    res.send({'key': 'Hello World!'})
+app.get('/', async (req, res) => {
 
     var code = req.query.code || null;
     var state = req.query.state || null;
@@ -50,7 +50,11 @@ app.get('/', (req, res) => {
             },
         };
 
-        axios.post(authOptions.url, querystring.stringify(authOptions.form), {"headers": authOptions.headers}).then(r => console.log(r)).catch(r => console.error(r));
+        await axios.post(authOptions.url, querystring.stringify(authOptions.form), {"headers": authOptions.headers}).then(async r => {
+            console.log(r.data)
+            await getUserProfile(r.data)
+        }).catch(r => console.error(r));
+        res.send("POGGERS")
     }
 })
 
@@ -78,3 +82,16 @@ app.get('/login', (req, res) => {
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
+
+
+const getUserProfile = async (data) => {
+    try {
+        const resp = await axios.get("https://api.spotify.com/v1/me", { headers: {
+            "Authorization": `${data.token_type} ${data.access_token}`
+        }});
+        console.log(resp.data);
+    } catch (err) {
+        console.log(err)
+        return { data: {} }
+    }
+}
