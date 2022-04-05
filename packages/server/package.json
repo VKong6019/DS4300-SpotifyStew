@@ -9,7 +9,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "axios": "^0.26.1",
+    "base64url": "^3.0.1",
+    "body-parser": "^1.20.0",
     "dotenv": "^16.0.0",
-    "express": "^4.17.3"
+    "express": "^4.17.3",
+    "query-string": "^7.1.1",
+    "randomstring": "^1.2.2"
   }
 }
