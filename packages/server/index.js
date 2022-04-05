@@ -16,6 +16,9 @@ const redirect_uri = 'http://localhost:8080/';
 
 const code_verifier = randomstring.generate(128);
 
+const client_id = process.env.SPOTIFY_CLIENT_ID;
+const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+
 const base64Digest = crypto
   .createHash("sha256")
   .update(code_verifier)
@@ -24,10 +27,8 @@ const base64Digest = crypto
 const code_challenge = base64url.fromBase64(base64Digest);
 
 app.get('/', (req, res) => {
-    console.log("WOW MY SECRET IS" + process.env.SPOTIFY_CLIENT_ID);
     res.send({'key': 'Hello World!'})
 
-    console.info(req.query)
     var code = req.query.code || null;
     var state = req.query.state || null;
 
@@ -37,17 +38,19 @@ app.get('/', (req, res) => {
         var authOptions = {
             url: 'https://accounts.spotify.com/api/token',
             form: {
-                code: code,
-                redirect_uri: redirect_uri,
-                grant_type: 'authorization_code'
+                code,
+                redirect_uri,
+                grant_type: 'authorization_code',
+                client_id: process.env.SPOTIFY_CLIENT_ID,
+                code_verifier
             },
             headers: {
                 'Authorization':  `Basic ${Buffer.from(process.env.SPOTIFY_CLIENT_ID + ":" + process.env.SPOTIFY_CLIENT_SECRET).toString('base64')}`,
                 'Content-Type': 'application/x-www-form-urlencoded' 
             },
-            json: true
         };
-        axios.post(authOptions.url, authOptions.form, authOptions.headers).then()
+
+        axios.post(authOptions.url, querystring.stringify(authOptions.form), {"headers": authOptions.headers}).then(r => console.log(r)).catch(r => console.error(r));
     }
 })
 
@@ -68,7 +71,7 @@ app.get('/login', (req, res) => {
             state: state,
             show_dialog: true,
             code_challenge_method: 'S256',
-            code_challenge
+            code_challenge: code_challenge
         }));
 })
 
