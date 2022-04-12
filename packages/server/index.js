@@ -62,36 +62,33 @@ app.get('/', async (req, res) => {
 
         const sessionDetails  = await axios.post(authOptions.url, querystring.stringify(authOptions.form), {"headers": authOptions.headers}).catch(r => console.error(r));
         const userData = await getUserProfile(sessionDetails.data) // .id
-        console.log(userData)
         const topTracks = await getUserTopTracks(sessionDetails.data)
         const trackIds = topTracks.map(b => b.id).join(',')
         const audioFeatures = await getAudioFeatures(sessionDetails.data, trackIds)
-        let mergedData = []
-        // insert into neo4j in for loop?
 
-        for (let i = 0; i < trackIds.length; i++){
-            // if !
-            if (!topTracks[i].name){
-                continue
-            }
-            //console.log(audioFeatures[i].id,topTracks[i].id) 
+
+        res.send(
+            {
+                userData,
+                topTracks, 
+                session: sessionDetails.data
+            })
+        // Insert data into DB after returning tracks. Reduces load time for user
+        for (let i = 0; i < audioFeatures.length; i++){
+            console.log(i)
             const mergeTrack = {...audioFeatures[i], ...topTracks[i] }
-            mergedData.push(mergeTrack)
-            // Running into an async error Cannot read property 'name' of undefined... working on it.
-            if (!mergeTrack.name){
-                continue
-            }
+
             const ranking = i + 1
-            
+
             const query = `MERGE (u:user {name: "${userData.id}"})
                             MERGE (s:song {name: "${mergeTrack.name.replace(/"/g, '\'')}", acousticness: ${mergeTrack.acousticness}, danceability: ${mergeTrack.danceability}, energy: ${mergeTrack.energy}, tempo: ${mergeTrack.tempo}, valence: ${mergeTrack.valence}})
                             MERGE (u)-[:LISTENS_TO {ranking: ${ranking}}]-(s)
                             RETURN u, s`
             
-            const writeResult = await session.writeTransaction(tx => tx.run (query, { userData, mergeTrack, ranking }))
+            await session.writeTransaction(tx => tx.run (query, { userData, mergeTrack, ranking }))
         }
         
-        res.send({mergedData})
+        
         
     }
 })
