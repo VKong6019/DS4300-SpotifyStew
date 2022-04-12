@@ -22,13 +22,15 @@ const code_verifier = randomstring.generate(128);
 const neo4j_username = process.env.NEO4J_USERNAME;
 const neo4j_password = process.env.NEO4J_PASSWORD;
 const neo4j_uri = process.env.DB_URI;
+const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+const client_id = process.env.SPOTIFY_CLIENT_ID;
+
 
 
 const driver = neo4j.driver(neo4j_uri, neo4j.auth.basic(neo4j_username, neo4j_password))
 const session = driver.session()
 
-const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-const client_id = process.env.SPOTIFY_CLIENT_ID;
+
 
 const base64Digest = crypto
   .createHash("sha256")
@@ -119,7 +121,9 @@ app.listen(port, () => {
 })
 
 app.get('/blend', (req,res) => {
-    const username = req.params.username
+    const currUser = req.params.currUser
+    const targetUser = req.params.targetUser
+    // neo4j query here. Both of these parameters are spotify usernames
 
 
 })
