@@ -89,9 +89,6 @@ app.get('/', async (req, res) => {
             
             await session.writeTransaction(tx => tx.run (query, { userData, mergeTrack, ranking }))
         }
-        
-        
-        
     }
 })
 
@@ -124,6 +121,31 @@ app.get('/blend', (req,res) => {
     const currUser = req.params.currUser
     const targetUser = req.params.targetUser
     // neo4j query here. Both of these parameters are spotify usernames
+    // TODO: replace instance of 'daflyingcactus' and 'emilydinh' with currUser and targetUser respectively
+    // this query current compares by average energy. we can just copy and paste this and switch out for other audio properties (valence, danceability,...)
+    const query = `match (u:user)--(s:song)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= 'daflyingcactus' or u.name= 'emilydinh'
+                        return avg(s.energy) as avg_energy
+                    }
+                    with u, s, avg_energy
+                    where (u.name= 'daflyingcactus' or u.name= 'emilydinh') and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
+                    return u, s
+                    order by rand()
+                    limit 20
+                    
+                    union
+                    
+                    match(u1:user)--(s:song)--(u2:user)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= 'daflyingcactus' or u.name= 'emilydinh'
+                        return avg(s.energy) as avg_energy
+                    }
+                    with u1, u2, s, avg_energy
+                    where u1.name= 'daflyingcactus' and u2.name= 'emilydinh' and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
+                    return u1 as u, s`
 
 
 })
