@@ -77,17 +77,15 @@ app.get('/', async (req, res) => {
             })
         // Insert data into DB after returning tracks. Reduces load time for user
         for (let i = 0; i < audioFeatures.length; i++){
-            console.log(i)
-            const mergeTrack = {...audioFeatures[i], ...topTracks[i] }
-
             const ranking = i + 1
+            const mergeTrack = {...audioFeatures[i], ...topTracks[i], ranking, userId: userData.id} //{mergeTrack.name.replace(/"/g, '\'')}
 
-            const query = `MERGE (u:user {name: "${userData.id}"})
-                            MERGE (s:song {name: "${mergeTrack.name.replace(/"/g, '\'')}", acousticness: ${mergeTrack.acousticness}, danceability: ${mergeTrack.danceability}, energy: ${mergeTrack.energy}, tempo: ${mergeTrack.tempo}, valence: ${mergeTrack.valence}})
-                            MERGE (u)-[:LISTENS_TO {ranking: ${ranking}}]-(s)
+            const query = `MERGE (u:user {name: $userId})
+                            MERGE (s:song {id: $id, name: $name, acousticness: $acousticness, danceability: $danceability, energy: $energy, tempo: $tempo, valence: $valence})
+                            MERGE (u)-[:LISTENS_TO {ranking: $ranking}]-(s)
                             RETURN u, s`
             
-            await session.writeTransaction(tx => tx.run (query, { userData, mergeTrack, ranking }))
+            await session.writeTransaction(tx => tx.run (query, mergeTrack))
         }
     }
 })
@@ -117,35 +115,37 @@ app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
 
-app.get('/blend', (req,res) => {
-    const currUser = req.params.currUser
-    const targetUser = req.params.targetUser
+app.get('/blend', async (req,res) => {
+    const currUser = req.query.currUser //emilydinh
+    const targetUser = req.query.targetUser
     // neo4j query here. Both of these parameters are spotify usernames
     // TODO: replace instance of 'daflyingcactus' and 'emilydinh' with currUser and targetUser respectively
     // this query current compares by average energy. we can just copy and paste this and switch out for other audio properties (valence, danceability,...)
     const query = `match (u:user)--(s:song)
                     call {
                         match (u:user)--(s:song)
-                        where u.name= 'daflyingcactus' or u.name= 'emilydinh'
+                        where u.name= $currUser or u.name= $targetUser
                         return avg(s.energy) as avg_energy
                     }
                     with u, s, avg_energy
-                    where (u.name= 'daflyingcactus' or u.name= 'emilydinh') and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
+                    where (u.name= $currUser or u.name= $targetUser) and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
                     return u, s
                     order by rand()
-                    limit 20
+                    limit 19
                     
                     union
                     
                     match(u1:user)--(s:song)--(u2:user)
                     call {
                         match (u:user)--(s:song)
-                        where u.name= 'daflyingcactus' or u.name= 'emilydinh'
+                        where u.name= $currUser or u.name= $targetUser
                         return avg(s.energy) as avg_energy
                     }
                     with u1, u2, s, avg_energy
-                    where u1.name= 'daflyingcactus' and u2.name= 'emilydinh' and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
+                    where u1.name= $currUser and u2.name= $targetUser and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
                     return u1 as u, s`
+    const results = (await session.run(query, {currUser, targetUser})).records.map(r => ({identity: r._fields[1].identity.low, user: r._fields[0].properties.name, song: r._fields[1].properties}))
+    res.send({results})
 
 
 })
