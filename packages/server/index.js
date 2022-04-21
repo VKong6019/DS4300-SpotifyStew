@@ -118,10 +118,11 @@ app.listen(port, () => {
 app.get('/blend', async (req,res) => {
     const currUser = req.query.currUser //emilydinh
     const targetUser = req.query.targetUser
+    const blendProp = req.query.blendProp
     // neo4j query here. Both of these parameters are spotify usernames
     // TODO: replace instance of 'daflyingcactus' and 'emilydinh' with currUser and targetUser respectively
     // this query current compares by average energy. we can just copy and paste this and switch out for other audio properties (valence, danceability,...)
-    const query = `match (u:user)--(s:song)
+    const energyQuery = `match (u:user)--(s:song)
                     call {
                         match (u:user)--(s:song)
                         where u.name= $currUser or u.name= $targetUser
@@ -144,6 +145,54 @@ app.get('/blend', async (req,res) => {
                     with u1, u2, s, avg_energy
                     where u1.name= $currUser and u2.name= $targetUser and s.energy > avg_energy - 0.1 and s.energy < avg_energy + 0.1
                     return u1 as u, s`
+    const danceQuery = `match (u:user)--(s:song)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= $currUser or u.name= $targetUser
+                        return avg(s.danceability) as avg_danceability
+                    }
+                    with u, s, avg_danceability
+                    where (u.name= $currUser or u.name= $targetUser) and s.danceability > avg_danceability - 0.1 and s.danceability < avg_danceability + 0.1
+                    return u, s
+                    order by rand()
+                    limit 19
+                    
+                    union
+                    
+                    match(u1:user)--(s:song)--(u2:user)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= $currUser or u.name= $targetUser
+                        return avg(s.danceability) as avg_danceability
+                    }
+                    with u1, u2, s, avg_danceability
+                    where u1.name= $currUser and u2.name= $targetUser and s.danceability > avg_danceability - 0.1 and s.danceability < avg_danceability + 0.1
+                    return u1 as u, s`
+    const valenceQuery = `match (u:user)--(s:song)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= $currUser or u.name= $targetUser
+                        return avg(s.valence) as avg_valence
+                    }
+                    with u, s, avg_valence
+                    where (u.name= $currUser or u.name= $targetUser) and s.valence > avg_valence - 0.1 and s.valence < avg_valence + 0.1
+                    return u, s
+                    order by rand()
+                    limit 19
+                    
+                    union
+                    
+                    match(u1:user)--(s:song)--(u2:user)
+                    call {
+                        match (u:user)--(s:song)
+                        where u.name= $currUser or u.name= $targetUser
+                        return avg(s.valence) as avg_valence
+                    }
+                    with u1, u2, s, avg_valence
+                    where u1.name= $currUser and u2.name= $targetUser and s.valence > avg_valence - 0.1 and s.valence < avg_valence + 0.1
+                    return u1 as u, s`
+    const query = blendProp === "energy" ? energyQuery : (blendProp === "valence" ? valenceQuery : danceQuery);
+    console.log(blendProp, query);
     const results = (await session.run(query, {currUser, targetUser})).records.map(r => ({identity: r._fields[1].identity.low, user: r._fields[0].properties.name, song: r._fields[1].properties}))
     res.send({results})
 
