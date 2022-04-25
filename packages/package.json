@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "ta-start": "npm install && npm run build && npm run start",
     "start": "node index.js",
     "client": "npm start --prefix client",
     "build": "cd client/ && npm install && npm run build"
