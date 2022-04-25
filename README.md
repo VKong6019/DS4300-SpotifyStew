@@ -1,8 +1,10 @@
 # DS4300-SpotifyStew
 We will stir your favorite songs together into some good soup. 🥣 
 
+Navigate to ```packages``` folder (```cd packages```)
 
-To start run ```npm run ta-start``` and navigate to localhost:8080/
+
+To start run ```npm run ta-start``` and navigate to ```localhost:8080/```
 
 Sign in with Spotify account and enter username to blend with. Some options are ```nzp15 & daflyingcactus & emilydinh```
 
