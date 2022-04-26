@@ -6,7 +6,10 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "ta-start": "npm install && npm run build && npm run start",
+    "start": "node index.js",
+    "client": "npm start --prefix client",
+    "build": "cd client/ && npm install && npm run build"
   },
   "dependencies": {
     "axios": "^0.26.1",
@@ -16,6 +19,7 @@
     "express": "^4.17.3",
     "neo4j-driver": "^4.4.5",
     "query-string": "^7.1.1",
-    "randomstring": "^1.2.2"
+    "randomstring": "^1.2.2",
+    "react-dropdown": "^1.9.2"
   }
 }

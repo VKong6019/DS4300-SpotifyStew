@@ -36,3 +36,14 @@
     transform: rotate(360deg);
   }
 }
+
+.Blend-Panel {
+  display:inline-flex;
+  font-size: x-large;
+}
+
+.square {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+}

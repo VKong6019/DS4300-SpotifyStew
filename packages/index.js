@@ -6,6 +6,13 @@ import base64url from 'base64url';
 import randomstring from 'randomstring';
 import axios from 'axios';
 import * as neo4j from 'neo4j-driver'
+import path from "path";
+import {fileURLToPath} from 'url';
+
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 dotenv.config();
@@ -39,13 +46,15 @@ const base64Digest = crypto
 
 const code_challenge = base64url.fromBase64(base64Digest);
 
+
+
 app.get('/', async (req, res) => {
 
     var code = req.query.code || null;
     var state = req.query.state || null;
 
     if (state === null) {
-        res.redirect('/err')
+        res.redirect('/login')
     } else {
         var authOptions = {
             url: 'https://accounts.spotify.com/api/token',
@@ -65,16 +74,12 @@ app.get('/', async (req, res) => {
         const sessionDetails  = await axios.post(authOptions.url, querystring.stringify(authOptions.form), {"headers": authOptions.headers}).catch(r => console.error(r));
         const userData = await getUserProfile(sessionDetails.data) // .id
         const topTracks = await getUserTopTracks(sessionDetails.data)
+        const topTracksTrunc = topTracks.map(b => [b.href,b.name])
         const trackIds = topTracks.map(b => b.id).join(',')
         const audioFeatures = await getAudioFeatures(sessionDetails.data, trackIds)
+        console.log(userData)
+        res.redirect(`/home?userId=${userData.id}&displayName=${userData.display_name}`)//&topTracks=${encodeURIComponent(topTracksTrunc)}`);
 
-
-        res.send(
-            {
-                userData,
-                topTracks, 
-                session: sessionDetails.data
-            })
         // Insert data into DB after returning tracks. Reduces load time for user
         for (let i = 0; i < audioFeatures.length; i++){
             const ranking = i + 1
@@ -115,7 +120,7 @@ app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
 
-app.get('/blend', async (req,res) => {
+app.get('/api/blend', async (req,res) => {
     const currUser = req.query.currUser //emilydinh
     const targetUser = req.query.targetUser
     const blendProp = req.query.blendProp
@@ -126,6 +131,7 @@ app.get('/blend', async (req,res) => {
         res.sendStatus(422);
         return
     }
+
     const query = `match (u:user)--(s:song)
                     call {
                         match (u:user)--(s:song)
@@ -152,9 +158,43 @@ app.get('/blend', async (req,res) => {
     console.log(blendProp, query);
     const results = (await session.run(query, {currUser, targetUser})).records.map(r => ({identity: r._fields[1].identity.low, user: r._fields[0].properties.name, song: r._fields[1].properties}))
     res.send({results})
-
-
 })
+
+app.get('/api/stats', async (req, res) => {
+    const currUser = req.query.currUser
+    const targetUser = req.query.targetUser
+
+    const query = `match (u:user {name:$targetUser})--(s:song) //other person being compared to
+                   call {
+                   match (u:user {name: $currUser})--(s:song) //person logging in
+                   return round(avg(s.valence), 3) as v1, round(avg(s.energy), 3) as e1, round(avg(s.danceability), 3) as d1
+                   }
+                   with v1,e1,d1, u, s
+                   return round((v1 - avg(s.valence)) / avg(s.valence), 3) as vdelta, 
+                   v1, 
+                   round(avg(s.valence), 3) as v2, 
+                   round((e1 - avg(s.energy)) / avg(s.energy), 3) as edelta, 
+                   round((d1 - avg(s.danceability)) / avg(s.danceability), 3) as ddelta`
+    const results = (await session.run(query, {currUser, targetUser})).records[0];
+    const keys = results.keys
+    const vals = results._fields
+    const statMap = {}
+    keys.forEach((key, indx) => statMap[key] = vals[indx] * 100)
+
+    res.send(statMap)
+})
+
+/*
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const userData = queryParams.get('userId');
+    const topTracks = queryParams.get('topTracks');
+*/
+app.use(express.static(path.join(__dirname, "/client/build")));
+app.get("/home", (req, res) => {
+    res.sendFile(path.join(__dirname, "/client/build/index.html"));
+});
+
 
 const getUserTopTracks = async (data) => {
     try {
