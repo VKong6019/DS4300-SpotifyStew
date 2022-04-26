@@ -126,9 +126,6 @@ app.get('/blend', async (req,res) => {
         res.sendStatus(422);
         return
     }
-    // neo4j query here. Both of these parameters are spotify usernames
-    // TODO: replace instance of 'daflyingcactus' and 'emilydinh' with currUser and targetUser respectively
-    // this query current compares by average energy. we can just copy and paste this and switch out for other audio properties (valence, danceability,...)
     const query = `match (u:user)--(s:song)
                     call {
                         match (u:user)--(s:song)

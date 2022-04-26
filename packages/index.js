@@ -131,9 +131,7 @@ app.get('/api/blend', async (req,res) => {
         res.sendStatus(422);
         return
     }
-    // neo4j query here. Both of these parameters are spotify usernames
-    // TODO: replace instance of 'daflyingcactus' and 'emilydinh' with currUser and targetUser respectively
-    // this query current compares by average energy. we can just copy and paste this and switch out for other audio properties (valence, danceability,...)
+
     const query = `match (u:user)--(s:song)
                     call {
                         match (u:user)--(s:song)
@@ -160,9 +158,32 @@ app.get('/api/blend', async (req,res) => {
     console.log(blendProp, query);
     const results = (await session.run(query, {currUser, targetUser})).records.map(r => ({identity: r._fields[1].identity.low, user: r._fields[0].properties.name, song: r._fields[1].properties}))
     res.send({results})
-
-
 })
+
+app.get('/api/stats', async (req, res) => {
+    const currUser = req.query.currUser
+    const targetUser = req.query.targetUser
+
+    const query = `match (u:user {name:$targetUser})--(s:song) //other person being compared to
+                   call {
+                   match (u:user {name: $currUser})--(s:song) //person logging in
+                   return round(avg(s.valence), 3) as v1, round(avg(s.energy), 3) as e1, round(avg(s.danceability), 3) as d1
+                   }
+                   with v1,e1,d1, u, s
+                   return round((v1 - avg(s.valence)) / avg(s.valence), 3) as vdelta, 
+                   v1, 
+                   round(avg(s.valence), 3) as v2, 
+                   round((e1 - avg(s.energy)) / avg(s.energy), 3) as edelta, 
+                   round((d1 - avg(s.danceability)) / avg(s.danceability), 3) as ddelta`
+    const results = (await session.run(query, {currUser, targetUser})).records[0];
+    const keys = results.keys
+    const vals = results._fields
+    const statMap = {}
+    keys.forEach((key, indx) => statMap[key] = vals[indx] * 100)
+
+    res.send(statMap)
+})
+
 /*
 
     const queryParams = new URLSearchParams(window.location.search);
