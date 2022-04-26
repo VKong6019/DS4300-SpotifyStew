@@ -89,16 +89,36 @@ function App() {
             Enter a username to blend with:
             <input value={usernameInput} onChange={(inp) => {setUsernameInput(inp.target.value)}}></input>
           </label>
-          <Dropdown options={blendOptions} onChange={onSelect} value={blendOption} placeholder="Select an option" />
-          <button onClick = {sendUsername}>Blend</button>
         </div>
+        <label>
+            Blend Options
+            <Dropdown options={blendOptions} onChange={onSelect} value={blendOption} placeholder="Select an option" />
+          </label>
+          <button className = "button1" onClick = {sendUsername}>Blend</button>
+
         {Object.keys(aggStats).length !== 0 && <CompileStats/>}
         <ul>
-        {
+          {results.length > 0 ? (
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>From User</th>
+            <th>Identity</th>
+            <th>View on spotify</th>
+          </tr>
+          {
           results.map((result) => {
-            return <li>Name: {result.song.name}, From User: {result.user}, Identity: {result.identity}, <a target = "_blank" href = {'https://open.spotify.com/track/' + result.song.id}>View Song</a></li>
+            return <tr>
+            <td>{result.song.name}</td>
+            <td>{result.user}</td>
+            <td>{result.identity}</td>
+            <td><a target = "_blank" href = {'https://open.spotify.com/track/' + result.song.id}>View Song</a></td>
+          </tr>
           })
         }
+          
+        </table>) : (<br></br>) }
+        
         </ul>
       </header>
     </div>
