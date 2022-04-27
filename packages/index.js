@@ -78,7 +78,7 @@ app.get('/', async (req, res) => {
         const trackIds = topTracks.map(b => b.id).join(',')
         const audioFeatures = await getAudioFeatures(sessionDetails.data, trackIds)
         console.log(userData)
-        res.redirect(`/home?userId=${userData.id}&displayName=${userData.display_name}`)//&topTracks=${encodeURIComponent(topTracksTrunc)}`);
+        
 
         // Insert data into DB after returning tracks. Reduces load time for user
         for (let i = 0; i < audioFeatures.length; i++){
@@ -92,6 +92,7 @@ app.get('/', async (req, res) => {
             
             await session.writeTransaction(tx => tx.run (query, mergeTrack))
         }
+        res.redirect(`/home?userId=${userData.id}&displayName=${userData.display_name}`)//&topTracks=${encodeURIComponent(topTracksTrunc)}`);
     }
 })
 
@@ -176,20 +177,21 @@ app.get('/api/stats', async (req, res) => {
                    round((e1 - avg(s.energy)) / avg(s.energy), 3) as edelta, 
                    round((d1 - avg(s.danceability)) / avg(s.danceability), 3) as ddelta`
     const results = (await session.run(query, {currUser, targetUser})).records[0];
+    console.log(results)
     const keys = results.keys
     const vals = results._fields
     const statMap = {}
-    keys.forEach((key, indx) => statMap[key] = vals[indx] * 100)
+    keys.forEach((key, indx) => statMap[key] = (vals[indx] * 100).toFixed(1));
 
     res.send(statMap)
 })
 
-/*
+app.get('/api/users', async (req, res) => {
+    const query = `match (u:user) return u.name`
+    const results = (await session.run(query)).records.map(r => r._fields[0]);
+    res.send(results);
+})
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const userData = queryParams.get('userId');
-    const topTracks = queryParams.get('topTracks');
-*/
 app.use(express.static(path.join(__dirname, "/client/build")));
 app.get("/home", (req, res) => {
     res.sendFile(path.join(__dirname, "/client/build/index.html"));

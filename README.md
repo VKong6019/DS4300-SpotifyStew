@@ -10,4 +10,4 @@ Sign in with Spotify account and enter username to blend with. Some options are 
 
 Also have the ability of what field to blend on. See dropdown menu for options
 
-See results populate below
+See results populate 
