@@ -25,16 +25,24 @@ function App() {
     'energy', 'valence', 'danceability'
   ];
 
-  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameInput, setUsernameInput] = useState('nzp15');
   const [blendOption, setBlendOption] = useState(blendOptions[0]);
+
   const [results, setResults] = useState([]);
+  const [users, setUsers] = useState([]);
+
   const [aggStats, setAggStats] = useState({});
   //let { userId } = useParams();
 
   const queryParams = new URLSearchParams(window.location.search);
   const userId = queryParams.get('userId');
   const displayName = queryParams.get('displayName');
-  
+  fetch(`api/users`)
+  .then(res => res.json())
+  .then((result => {
+    console.log(result);
+    setUsers(result);
+  }))
   const sendUsername = async () =>{
     await fetch(`api/blend?currUser=${userId}&targetUser=${usernameInput}&blendProp=${blendOption}`)
     .then(res => res.json())
@@ -49,6 +57,8 @@ function App() {
           console.log(result);
           setAggStats(result);
         }))
+
+        
   }
   const CompileStats = () => {
     const currAudioAura = describeAudioAura(aggStats["v1"]);
@@ -78,6 +88,9 @@ function App() {
   function onSelect(e){
     setBlendOption(e.value);
   }
+  function onUserSelect(e){
+    setUsernameInput(e.value);
+  }
 
 
   return (
@@ -86,8 +99,8 @@ function App() {
         <h1>Hello {displayName}</h1>
         <div className="Blend-Panel">
           <label>
-            Enter a username to blend with:
-            <input value={usernameInput} onChange={(inp) => {setUsernameInput(inp.target.value)}}></input>
+            Select a username to blend with:
+            {users ? (<Dropdown options={users} onChange={onUserSelect} value={usernameInput} placeholder="Select an option" />) : (<br></br>)}
           </label>
         </div>
         <label>
