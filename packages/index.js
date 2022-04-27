@@ -186,6 +186,11 @@ app.get('/api/stats', async (req, res) => {
     res.send(statMap)
 })
 
+app.get('/api/users', async (req, res) => {
+    const query = `match (u:user) return u.name`
+    const results = (await session.run(query)).records.map(r => r._fields[0]);
+    res.send(results);
+})
 
 app.use(express.static(path.join(__dirname, "/client/build")));
 app.get("/home", (req, res) => {
