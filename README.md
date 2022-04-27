@@ -3,6 +3,7 @@ We will stir your favorite songs together into some good soup. 🥣
 
 Navigate to ```packages``` folder (```cd packages```)
 
+Make sure to rename ```.env.sample``` to ```.env``` and populate environment variables
 
 To start run ```npm run ta-start``` and navigate to ```localhost:8080/```
 
