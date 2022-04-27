@@ -181,7 +181,7 @@ app.get('/api/stats', async (req, res) => {
     const keys = results.keys
     const vals = results._fields
     const statMap = {}
-    keys.forEach((key, indx) => statMap[key] = vals[indx] * 100)
+    keys.forEach((key, indx) => statMap[key] = (vals[indx] * 100).toFixed(1));
 
     res.send(statMap)
 })

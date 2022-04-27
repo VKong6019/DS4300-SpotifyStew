@@ -53,8 +53,8 @@ function App() {
   const CompileStats = () => {
     const currAudioAura = describeAudioAura(aggStats["v1"]);
     const targetAudioAura = describeAudioAura(aggStats["v2"]);
-    const compareValence = `Your music is ${aggStats["vdelta"]}% ${aggStats["vdelta"] > 0 ? "more" : "less"} happier 🌤️ than ${usernameInput}`;
-    const compareEnergy = `Your music is ${aggStats["edelta"]}% ${aggStats["edelta"] > 0 ? "more" : "less"} livelier 🎤 than ${usernameInput}`;
+    const compareValence = `Your music is ${aggStats["vdelta"]}% ${aggStats["vdelta"] > 0 ? "" : "less"} happier 🌤️ than ${usernameInput}`;
+    const compareEnergy = `Your music is ${aggStats["edelta"]}% ${aggStats["edelta"] > 0 ? "" : "less"} livelier 🎤 than ${usernameInput}`;
     const compareDanceability = `Your music is ${aggStats["ddelta"]}% ${aggStats["ddelta"] > 0 ? "more" : "less"} danceable 🕺🏽 than ${usernameInput}`;
 
     // TODO:  will fix the styling :sweats:
